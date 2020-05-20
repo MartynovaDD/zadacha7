@@ -16,6 +16,9 @@ Student** mass(FILE* input, int size){
     char *istr;
     Student** arrStud;
     arrStud = (Student**)malloc(size * sizeof(Student*));
+    if(arrStud == NULL){
+        printf("Error! Can't allocate memory!\n");
+    }
     for (int i = 0; i < size; i++){
         fgets (str,sizeof(str),input);
         arrStud[i] = (Student*)malloc(sizeof(Student));
@@ -31,7 +34,7 @@ Student** mass(FILE* input, int size){
 
 
 
-void func (FILE* input){
+int func (FILE* input){
     FILE* output;
     Student** arrstud;
     Student** temp;
@@ -45,63 +48,76 @@ void func (FILE* input){
     s = size;
     rewind(input);
     arrstud=mass(input, size);
-    for(int i=0; i<size-1; i++){
-        for (int j=i+1; j<size; j++){
-            if ((strcmp(arrstud[i]->name, arrstud[j]->name)==0) && (arrstud[i]->group==arrstud[j]->group)){
-                if(arrstud[i]->rating < arrstud[j]->rating){
-                    arrstud[i]->rating = arrstud[j]->rating;
+    if (arrstud == NULL){
+        return -1;
+    }
+    else{
+        for(int i=0; i<size-1; i++){
+            for (int j=i+1; j<size; j++){
+                if ((strcmp(arrstud[i]->name, arrstud[j]->name)==0) && (arrstud[i]->group==arrstud[j]->group)){
+                    if(arrstud[i]->rating < arrstud[j]->rating){
+                        arrstud[i]->rating = arrstud[j]->rating;
+                    }
+                    m++;
+                    free(arrstud[j]);
+                    for (int s=j; s<size-1; s++){
+                        arrstud[s]=arrstud[s+1];
+                    }
+                    j--;
+                    size--;
                 }
-                m++;
-                free(arrstud[j]);
-                for (int s=j; s<size-1; s++){
-                    arrstud[s]=arrstud[s+1];
-                }
-                j--;
-                size--;
             }
         }
-    }
-    if (m!=0){
-        temp=(Student**)realloc(arrstud, (s-m)*sizeof(Student*));
-        if(temp){
-            arrstud=temp;
+        if (m!=0){
+            temp=(Student**)realloc(arrstud, (s-m)*sizeof(Student*));
+            if(temp){
+                arrstud=temp;
+            }
         }
+        output = fopen("res.txt","w");
+        for (int i=0; i<s-m; i++){
+            fprintf(output, "%s ", arrstud[i]->name);
+            fprintf(output, "%d ", arrstud[i]->group);
+            fprintf(output, "%lf\n", arrstud[i]->rating);
+        }
+        for (int i=0; i<s-m; i++){
+            free(arrstud[i]);
+        }
+        free(arrstud);
+        fclose(output);
+        return 0;
     }
-    output = fopen("res.txt","w");
-    for (int i=0; i<s-m; i++){
-        fprintf(output, "%s ", arrstud[i]->name);
-        fprintf(output, "%d ", arrstud[i]->group);
-        fprintf(output, "%lf\n", arrstud[i]->rating);
-    }
-    for (int i=0; i<s-m; i++){
-        free(arrstud[i]);
-    }
-    free(arrstud);
-    fclose(output);
 }
 
 
 void AutoTest (void){
     FILE* input;
     FILE* output;
-    char str[17];
-    char st[17] = "Sam 123 5.000000";
+    char t[514];
+    char str[64];
+    char st[] = "Sam 123 5.000000";
     input = fopen("test.txt","r++");
     if (!input){
         printf("Error! Cannot open file !\n");
     }
     else{
-        func(input);
-        fclose(input);
-        output=fopen("res.txt", "r");
-        fgets (str,sizeof(str),output);
-        if (strcmp(st, str)==0){
-            printf("Autotest passed\n");
+        if (fgets(t, 514, input)==NULL){
+            printf("Error! Cannot read from file!\n");
+            fclose(input);
         }
         else{
-            printf("Autotest failed\n");
+            func(input);
+            fclose(input);
+            output=fopen("res.txt", "r");
+            fgets (str,sizeof(str),output);
+            if (strcmp(st, str)==0){
+                printf("Autotest passed\n");
+            }
+            else{
+                printf("Autotest failed\n");
+            }
+            fclose(output);
         }
-        fclose(output);
     }
 }
 
@@ -111,6 +127,7 @@ void AutoTest (void){
 int main(void){
     FILE* input;
     char t[514];
+    int f;
     input = fopen("text.txt","r");
     AutoTest();
     if (!input){
@@ -124,9 +141,14 @@ int main(void){
             return -1;
         }
         else{
-            func(input);
+            f = func(input);
+            if (f == 0){
+                return 0;
+            }
+            else{
+                return -1;
+            }
             fclose(input);
-            return 0;
         }
     }
 }
